@@ -32,6 +32,7 @@ class LinkList extends Component {
 
   componentDidMount() {
     this._subscribeToNewLinks()
+    this._subscribeToNewVotes()
   }
 
   _updateCacheAfterVote = (store, createVote, linkId) => {
@@ -43,6 +44,51 @@ class LinkList extends Component {
 
     store.writeQuery({ query: FEED_QUERY, data })
   }
+
+  _subscribeToNewVotes = () => {
+  this.props.feedQuery.subscribeToMore({
+    document: gql`
+      subscription {
+        newVote {
+          node {
+            id
+            link {
+              id
+              url
+              description
+              createdAt
+              postedBy {
+                id
+                name
+              }
+              votes {
+                id
+                user {
+                  id
+                }
+              }
+            }
+            user {
+              id
+            }
+          }
+        }
+      }
+    `,
+    updateQuery: (previous, { subscriptionData }) => {
+      console.log(`NEW VOTE`)
+      // const votedLinkIndex = previous.feed.links.findIndex(
+      //   link => link.id === subscriptionData.data.newVote.node.link.id,
+      // )
+      const newAllLinks = previous.feed.links.slice()
+      const result = {
+        ...previous,
+        allLinks: newAllLinks,
+      }
+      return result
+    },
+  })
+}
 
   _subscribeToNewLinks = () => {
     this.props.feedQuery.subscribeToMore({
